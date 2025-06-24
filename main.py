@@ -35,10 +35,9 @@ def main():
     # Run evaluation
     print(f"\nEvaluating {strategy.name} over {DEFAULT_TEST_DAYS} days...")
     results = evaluator.calculate_pnl(price_data, strategy, DEFAULT_TEST_DAYS)
-    mean_pl, return_ratio, pl_std, annual_sharpe, total_dollar_volume = results
     
     # Print results
-    print_performance_summary(mean_pl, return_ratio, pl_std, annual_sharpe, total_dollar_volume)
+    print_performance_summary(results)
 
 
 if __name__ == "__main__":

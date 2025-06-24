@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
 from typing import NamedTuple
-from config.settings import COMMISSION_RATE, DOLLAR_POSITION_LIMIT
+from config.settings import COMMISSION_RATE, DOLLAR_POSITION_LIMIT, OUTPUT_DIR
 
 
 class PnLResult(NamedTuple):
@@ -62,6 +65,13 @@ class StrategyEvaluator:
         value = 0
         daily_pnl = []
         
+        # Track data for plotting
+        daily_values = []
+        daily_positions = []
+        daily_exposures = []
+        daily_volumes = []
+        daily_returns = []
+        
         # Reset strategy
         strategy.reset(n_instruments)
         
@@ -97,8 +107,12 @@ class StrategyEvaluator:
                 return_ratio = value / total_dollar_volume
             
             if t > start_day:
-                print(f"Day {t} value: {value:.2f} todayPL: ${today_pl:.2f} $-traded: {total_dollar_volume:.0f} return: {return_ratio:.5f}")
                 daily_pnl.append(today_pl)
+                daily_values.append(value)
+                daily_positions.append(np.sum(np.abs(current_pos)))
+                daily_exposures.append(np.sum(np.abs(current_pos) * current_prices))
+                daily_volumes.append(total_dollar_volume)
+                daily_returns.append(return_ratio)
         
         # Calculate statistics
         pnl_array = np.array(daily_pnl)
@@ -109,6 +123,17 @@ class StrategyEvaluator:
         if pl_std > 0:
             annual_sharpe = np.sqrt(249) * mean_pl / pl_std
         
+        # Create performance plot
+        self._create_performance_plot(
+            strategy.name,
+            daily_pnl,
+            daily_values, 
+            daily_positions,
+            daily_exposures,
+            daily_volumes,
+            daily_returns
+        )
+        
         return PnLResult(
             mean_pnl=mean_pl,
             return_ratio=return_ratio,
@@ -116,3 +141,72 @@ class StrategyEvaluator:
             annual_sharpe=annual_sharpe,
             total_dollar_volume=total_dollar_volume
         )
+    
+    def _create_performance_plot(self, strategy_name: str, daily_pnl: list, 
+                               daily_values: list, daily_positions: list,
+                               daily_exposures: list, daily_volumes: list, 
+                               daily_returns: list):
+        """Create and save performance visualization plots"""
+        # Create output directory
+        output_path = Path(OUTPUT_DIR)
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Create figure with subplots
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
+        fig.suptitle(f'{strategy_name} Performance Analysis', fontsize=16, fontweight='bold')
+        
+        # Days array for x-axis
+        days = np.arange(1, len(daily_pnl) + 1)
+        
+        # Plot 1: Daily P&L
+        ax1.plot(days, daily_pnl, 'b-', alpha=0.3, label='Daily P&L')
+        
+        # Add moving average (7-day window, or use available data if less)
+        window_size = min(14, len(daily_pnl))
+        if len(daily_pnl) >= 2:
+            pnl_series = pd.Series(daily_pnl)
+            moving_avg = pnl_series.rolling(window=window_size, min_periods=1).mean()
+            ax1.plot(days, moving_avg, 'r-', alpha=0.8, linewidth=2, label=f'{window_size}-day MA')
+        
+        ax1.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
+        ax1.set_title('Daily P&L')
+        ax1.set_xlabel('Trading Day')
+        ax1.set_ylabel('P&L ($)')
+        ax1.grid(True, alpha=0.3)
+        ax1.legend()
+        
+        # Plot 2: Cumulative Portfolio Value
+        ax2.plot(days, daily_values, 'g-', linewidth=2)
+        ax2.set_title('Portfolio Value Over Time')
+        ax2.set_xlabel('Trading Day')
+        ax2.set_ylabel('Portfolio Value ($)')
+        ax2.grid(True, alpha=0.3)
+        
+        # Plot 3: Total Exposure
+        ax3.plot(days, daily_exposures, 'orange', alpha=0.8)
+        ax3.set_title('Total Exposure (Dollar Value of Positions)')
+        ax3.set_xlabel('Trading Day')
+        ax3.set_ylabel('Total Exposure ($)')
+        ax3.grid(True, alpha=0.3)
+        
+        # Plot 4: Drawdown Analysis
+        portfolio_values = np.array(daily_values)
+        running_max = np.maximum.accumulate(portfolio_values)
+        drawdowns = (portfolio_values - running_max) / np.maximum(running_max, 1)  # Avoid div by zero
+        
+        ax4.fill_between(days, drawdowns * 100, 0, color='red', alpha=0.3, label='Drawdown')
+        ax4.plot(days, drawdowns * 100, 'red', linewidth=1)
+        ax4.set_title('Portfolio Drawdown Over Time')
+        ax4.set_xlabel('Trading Day')
+        ax4.set_ylabel('Drawdown (%)')
+        ax4.grid(True, alpha=0.3)
+        ax4.legend()
+        
+        plt.tight_layout()
+        
+        # Save plot
+        plot_path = output_path / f'{strategy_name.lower().replace(" ", "_")}_performance.png'
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"Performance plot saved to: {plot_path}")

@@ -11,3 +11,6 @@ DOLLAR_POSITION_LIMIT = 10000
 # Evaluation parameters
 DEFAULT_TEST_DAYS = 750
 PENALTY_FACTOR = 0.1
+
+# Output settings
+OUTPUT_DIR = "./output"
