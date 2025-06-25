@@ -11,7 +11,7 @@ class MomentumStrategy(BaseStrategy):
     
     def _get_position(self, price_history: np.ndarray) -> np.ndarray:
         """Calculate position based on momentum signal"""
-        n_instruments, n_timepoints = price_history.shape
+        n_timepoints, n_instruments = price_history.shape
         
         if self.current_pos is None:
             self.current_pos = np.zeros(n_instruments)
@@ -20,7 +20,7 @@ class MomentumStrategy(BaseStrategy):
             return np.zeros(n_instruments)
         
         # Calculate last return
-        last_return = np.log(price_history[:, -1] / price_history[:, -2])
+        last_return = np.log(price_history[-1] / price_history[-2])
         
         # Normalize
         l_norm = np.sqrt(last_return.dot(last_return))
@@ -28,7 +28,7 @@ class MomentumStrategy(BaseStrategy):
             last_return /= l_norm
         
         # Calculate position change
-        position_change = np.array([int(x) for x in self.position_scale * last_return / price_history[:, -1]])
+        position_change = np.array([int(x) for x in self.position_scale * last_return / price_history[-1]])
         
         # Calculate new position
         new_position = np.array([int(x) for x in self.current_pos + position_change])

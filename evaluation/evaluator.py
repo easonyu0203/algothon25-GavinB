@@ -36,7 +36,7 @@ class StrategyEvaluator:
     def load_prices(self, filename: str) -> np.ndarray:
         """Load price data from file"""
         df = pd.read_csv(filename, sep=r'\s+', header=None, index_col=None)
-        return df.values.T
+        return df.values
     
     def calculate_pnl(self, price_history: np.ndarray, strategy, 
                      num_test_days: int) -> PnLResult:
@@ -44,7 +44,7 @@ class StrategyEvaluator:
         Calculate P&L for a trading strategy over a specified test period.
         
         Args:
-            price_history: Historical price data as (n_instruments, n_timepoints) array
+            price_history: Historical price data as (n_timepoints, n_instruments) array
             strategy: Trading strategy object with reset() and get_position() methods
             num_test_days: Number of days to run the backtest
             
@@ -56,7 +56,7 @@ class StrategyEvaluator:
                 - annual_sharpe: Annualized Sharpe ratio (assumes 249 trading days)
                 - total_dollar_volume: Total dollar volume traded across all days
         """
-        n_instruments, n_timepoints = price_history.shape
+        n_timepoints, n_instruments = price_history.shape
         
         # Initialize tracking variables
         cash = 0
@@ -78,8 +78,8 @@ class StrategyEvaluator:
         start_day = n_timepoints + 1 - num_test_days
         
         for t in range(start_day, n_timepoints + 1):
-            price_hist_so_far = price_history[:, :t]
-            current_prices = price_hist_so_far[:, -1]
+            price_hist_so_far = price_history[:t, :]
+            current_prices = price_hist_so_far[-1]
             
             if t < n_timepoints:
                 # Trading (don't trade on last day)

@@ -10,6 +10,6 @@ class BuyAllStrategy(BaseStrategy):
         self.max_position = max_position
     
     def _get_position(self, price_history: np.ndarray) -> np.ndarray:
-        n_instruments, _ = price_history.shape
+        _, n_instruments = price_history.shape
         
         return np.ones(n_instruments) * self.max_position

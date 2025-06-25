@@ -18,9 +18,6 @@ from config.settings import DATA_PATH, DEFAULT_TEST_DAYS
 
 def main():
     """Main execution function"""
-    print("Algorithmic Trading System")
-    print("=" * 40)
-    
     # Initialize strategy and evaluator
     strategy = MomentumStrategy()
     evaluator = StrategyEvaluator()
@@ -33,7 +30,6 @@ def main():
         return
     
     # Run evaluation
-    print(f"\nEvaluating {strategy.name} over {DEFAULT_TEST_DAYS} days...")
     results = evaluator.calculate_pnl(price_data, strategy, DEFAULT_TEST_DAYS)
     
     # Print results

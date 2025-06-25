@@ -15,7 +15,7 @@ class BaseStrategy(ABC):
         Calculate desired position based on price history
         
         Args:
-            price_history: Shape (n_instruments, n_timepoints) - price data
+            price_history: Shape (n_timepoints, n_instruments) - price data
             
         Returns:
             numpy array of desired positions for each instrument
