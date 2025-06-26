@@ -1,5 +1,6 @@
 import numpy as np
 from .base_strategy import BaseStrategy
+from config.settings import DOLLAR_POSITION_LIMIT # limit dollar posisition per instrument (10k)
 
 
 class MomentumStrategy(BaseStrategy):

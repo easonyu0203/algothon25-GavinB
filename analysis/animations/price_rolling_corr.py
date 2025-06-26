@@ -8,10 +8,10 @@ from pathlib import Path
 from matplotlib.animation import FuncAnimation
 
 # Load price data
-prices = np.loadtxt("../data/prices.txt").T
+prices = np.loadtxt("./data/prices.txt").T
 returns = np.log(prices[:, 1:] / prices[:, :-1])
 
-payload = prices
+payload = returns
 
 # Parameters
 window_size = 30
